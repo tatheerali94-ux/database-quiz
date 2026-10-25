@@ -1,0 +1,359 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Zoo Query Quest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: the ZOO table is the game board on the left; the challenge card sits beside it (stacks on phones). */
+:root {
+  --bg: #F3F7F6;
+  --panel: #FFFFFF;
+  --ink: #12333B;
+  --muted: #557178;
+  --line: #CFDFDC;
+  --teal: #1B8A7E;
+  --teal-soft: #DDF0EC;
+  --amber: #E8913A;
+  --amber-soft: #FCE9D4;
+  --good: #2E8B57;
+  --good-soft: #DCF1E3;
+  --bad: #C8442B;
+  --bad-soft: #F8DFD8;
+  --code-bg: #0F3A44;
+  --code-fg: #E6F4F1;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "Courier New", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0D1F24; --panel: #142C33; --ink: #E3F0EE; --muted: #93B0B4; --line: #26454C;
+  --teal: #3CC2B2; --teal-soft: #173F42; --amber: #F2A55A; --amber-soft: #3D2E1C;
+  --good: #5CC98A; --good-soft: #17392A; --bad: #EE7A62; --bad-soft: #43231D;
+  --code-bg: #08181C; --code-fg: #D5EEEA; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0D1F24; --panel: #142C33; --ink: #E3F0EE; --muted: #93B0B4; --line: #26454C;
+  --teal: #3CC2B2; --teal-soft: #173F42; --amber: #F2A55A; --amber-soft: #3D2E1C;
+  --good: #5CC98A; --good-soft: #17392A; --bad: #EE7A62; --bad-soft: #43231D;
+  --code-bg: #08181C; --code-fg: #D5EEEA; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+h1 span { color: var(--teal); }
+.sub { margin: 6px 0 0; color: var(--muted); font-size: 0.95rem; }
+.stats { display: flex; gap: 10px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 14px; text-align: center; min-width: 76px; }
+.stat b { display: block; font-family: var(--display); font-size: 1.4rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat small { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.stat.streak b { color: var(--amber); }
+.pips { display: flex; gap: 5px; flex-wrap: wrap; }
+.pip { width: 22px; height: 7px; border-radius: 4px; background: var(--line); }
+.pip.ok { background: var(--good); } .pip.no { background: var(--bad); } .pip.now { background: var(--amber); }
+
+.board { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 820px) { .board { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+.panel h2 { font-family: var(--display); font-weight: 600; font-size: 1.05rem; margin: 0 0 10px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.panel h2 code { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); font-weight: 500; }
+.tablebox { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+th { background: var(--code-bg); color: var(--code-fg); font-family: var(--mono); font-weight: 700; font-size: 0.78rem; text-align: left; padding: 8px 10px; white-space: nowrap; }
+th:first-child { border-top-left-radius: 8px; } th:last-child { border-top-right-radius: 8px; }
+td { padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+tbody tr { transition: background .15s; }
+table.pick tbody tr { cursor: pointer; }
+table.pick tbody tr:hover { background: var(--teal-soft); }
+tbody tr.sel { background: var(--amber-soft) !important; box-shadow: inset 4px 0 0 var(--amber); }
+tbody tr.right { background: var(--good-soft) !important; }
+tbody tr.wrong { background: var(--bad-soft) !important; }
+tbody tr.missed { box-shadow: inset 4px 0 0 var(--good); }
+tbody tr:focus-visible { outline: 3px solid var(--teal); outline-offset: -3px; }
+.hint { color: var(--muted); font-size: 0.85rem; margin: 10px 0 0; }
+
+.kind { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); background: var(--teal-soft); padding: 3px 9px; border-radius: 99px; }
+.q { font-family: var(--display); font-weight: 600; font-size: 1.3rem; line-height: 1.25; margin: 10px 0 12px; text-wrap: balance; }
+pre.sql { background: var(--code-bg); color: var(--code-fg); font-family: var(--mono); font-size: 0.9rem; padding: 12px 14px; border-radius: 10px; margin: 0 0 14px; white-space: pre-wrap; overflow-x: auto; }
+pre.sql .k { color: var(--amber); font-weight: 700; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.opt { background: var(--bg); border: 2px solid var(--line); border-radius: 10px; padding: 10px 12px; text-align: left; font-weight: 700; }
+.opt:hover:not(:disabled) { border-color: var(--teal); }
+.opt.right { border-color: var(--good); background: var(--good-soft); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt:disabled { cursor: default; }
+button:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+.line { min-height: 56px; border: 2px dashed var(--line); border-radius: 10px; padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; background: var(--bg); }
+.line:empty::before { content: "Tap the tiles below in order to build your query"; color: var(--muted); font-size: 0.85rem; padding: 0 6px; }
+.tiles { display: flex; flex-wrap: wrap; gap: 6px; }
+.tile { font-family: var(--mono); font-size: 0.85rem; font-weight: 700; padding: 7px 10px; border-radius: 8px; border: 0; background: var(--code-bg); color: var(--code-fg); }
+.tile.kw { color: var(--amber); }
+.tile:disabled { opacity: 0.25; cursor: default; }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.btn { border: 0; border-radius: 10px; padding: 11px 18px; font-weight: 700; background: var(--teal); color: #fff; }
+.btn.ghost { background: transparent; border: 2px solid var(--line); color: var(--ink); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.feedback { margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 0.95rem; }
+.feedback.ok { background: var(--good-soft); }
+.feedback.no { background: var(--bad-soft); }
+.feedback b { display: block; font-family: var(--display); font-size: 1.05rem; }
+.feedback code { font-family: var(--mono); font-size: 0.85rem; }
+
+.end { text-align: left; }
+.end .big { font-family: var(--display); font-weight: 800; font-size: 3.4rem; line-height: 1; color: var(--teal); font-variant-numeric: tabular-nums; }
+.rank { font-family: var(--display); font-weight: 600; font-size: 1.4rem; margin: 6px 0 4px; }
+.review { margin: 14px 0 0; padding-left: 20px; font-size: 0.92rem; }
+.review li { margin-bottom: 6px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.pop { animation: pop .35s ease; }
+@keyframes pop { 0% { transform: scale(.97); } 60% { transform: scale(1.01); } 100% { transform: scale(1); } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Zoo <span>Query</span> Quest</h1>
+      <p class="sub">IGCSE Databases practice · data types, keys, validation and SQL</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="score">0</b><small>Score</small></div>
+      <div class="stat streak"><b id="streak">0</b><small>Streak</small></div>
+      <div class="stat"><b id="qnum">1/12</b><small>Round</small></div>
+    </div>
+  </header>
+  <div class="pips" id="pips" aria-hidden="true"></div>
+
+  <div class="board">
+    <section class="panel">
+      <h2>Table: ZOO <code>7 records · 6 fields</code></h2>
+      <div class="tablebox"><table id="zoo"><thead></thead><tbody></tbody></table></div>
+      <p class="hint" id="tableHint">Use this table to answer every round.</p>
+    </section>
+    <section class="panel" id="card" aria-live="polite"></section>
+  </div>
+</div>
+
+<script>
+const FIELDS = ["AnimalID", "Name", "Species", "Age", "WeightKg", "Endangered"];
+const ZOO = [
+  ["A1", "Luna", "Tiger", 6, "190.5", "TRUE"],
+  ["A2", "Bobo", "Gorilla", 12, "160.0", "TRUE"],
+  ["A3", "Pip", "Penguin", 3, "4.2", "FALSE"],
+  ["A4", "Raja", "Tiger", 9, "210.0", "TRUE"],
+  ["A5", "Kiko", "Penguin", 5, "3.8", "FALSE"],
+  ["A6", "Zara", "Zebra", 7, "320.0", "FALSE"],
+  ["A7", "Milo", "Gorilla", 4, "95.5", "TRUE"],
+];
+
+const ROUNDS = [
+  { kind: "Data types", type: "choice", q: "Which data type suits the Endangered field?",
+    opts: ["Text", "Integer", "Boolean", "Real"], a: "Boolean",
+    why: "Endangered only ever holds TRUE or FALSE, so it is Boolean." },
+  { kind: "Run the query", type: "rows", q: "Tap every record this query returns.",
+    sql: "SELECT Name\nFROM ZOO\nWHERE Species = 'Tiger';", a: ["A1", "A4"],
+    why: "Only Luna (A1) and Raja (A4) have Species = 'Tiger'." },
+  { kind: "Data types", type: "choice", q: "Which data type suits the WeightKg field?",
+    opts: ["Integer", "Real", "Character", "Date/time"], a: "Real",
+    why: "Weights like 190.5 have decimal places, so the type is Real." },
+  { kind: "Primary key", type: "choice", q: "Which field should be the primary key?",
+    opts: ["Name", "Species", "AnimalID", "Age"], a: "AnimalID",
+    why: "AnimalID is different for every record, so it uniquely identifies each animal. Names and species can repeat." },
+  { kind: "Run the query", type: "rows", q: "Tap every record this query returns.",
+    sql: "SELECT Name, Age\nFROM ZOO\nWHERE Age > 6;", a: ["A2", "A4", "A6"],
+    why: "Ages greater than 6: Bobo 12, Raja 9, Zara 7. Luna is exactly 6, and 6 > 6 is false." },
+  { kind: "Build the SQL", type: "build", q: "Build a query to show the Name of every penguin.",
+    tiles: ["SELECT", "Name", "FROM", "ZOO", "WHERE", "Species = 'Penguin'", "ORDER BY", "Age", "SUM(Age)", "Species = Penguin"],
+    a: [["SELECT", "Name", "FROM", "ZOO", "WHERE", "Species = 'Penguin'"]],
+    why: "SELECT Name FROM ZOO WHERE Species = 'Penguin'; Text values need quotes." },
+  { kind: "Validation", type: "choice", q: "The keeper must enter an Age between 0 and 60. Which check is this?",
+    opts: ["Presence check", "Range check", "Length check", "Format check"], a: "Range check",
+    why: "A range check makes sure a value lies between a lower and an upper limit." },
+  { kind: "Run the query", type: "rows", q: "Tap every record this query returns.",
+    sql: "SELECT Name\nFROM ZOO\nWHERE Endangered = TRUE AND WeightKg > 150;", a: ["A1", "A2", "A4"],
+    why: "Both conditions must be true. Milo is endangered but only weighs 95.5, so AND removes him." },
+  { kind: "Aggregate", type: "choice", q: "What does this query output?",
+    sql: "SELECT COUNT(*)\nFROM ZOO\nWHERE Species = 'Gorilla';", opts: ["1", "2", "3", "7"], a: "2",
+    why: "COUNT counts matching records: Bobo and Milo, so 2." },
+  { kind: "Aggregate", type: "choice", q: "What does this query output?",
+    sql: "SELECT SUM(Age)\nFROM ZOO\nWHERE Species = 'Penguin';", opts: ["2", "5", "8", "15"], a: "8",
+    why: "SUM adds the Age values of the penguins: Pip 3 + Kiko 5 = 8." },
+  { kind: "Run the query", type: "rows", q: "Tap every record this query returns.",
+    sql: "SELECT Name\nFROM ZOO\nWHERE Species = 'Zebra' OR Age < 4;", a: ["A3", "A6"],
+    why: "OR needs only one condition to be true: Zara is a zebra, and Pip is 3 years old." },
+  { kind: "Build the SQL", type: "build", q: "Build a query to list the Name and Age of all animals, oldest first.",
+    tiles: ["SELECT", "Name, Age", "FROM", "ZOO", "ORDER BY", "Age", "DESC", "ASC", "WHERE", "COUNT(*)"],
+    a: [["SELECT", "Name, Age", "FROM", "ZOO", "ORDER BY", "Age", "DESC"]],
+    why: "SELECT Name, Age FROM ZOO ORDER BY Age DESC; DESC puts the highest age first." },
+];
+
+const KW = new Set(["SELECT", "FROM", "WHERE", "ORDER BY", "DESC", "ASC", "AND", "OR"]);
+const $ = (id) => document.getElementById(id);
+let i = 0, score = 0, streak = 0, best = 0, results = [], picked = new Set(), built = [], locked = false;
+
+function hiSQL(s) {
+  return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]))
+    .replace(/\b(SELECT|FROM|WHERE|ORDER BY|AND|OR|SUM|COUNT|DESC|ASC|TRUE|FALSE)\b/g, '<span class="k">$1</span>');
+}
+
+function drawTable() {
+  $("zoo").querySelector("thead").innerHTML = "<tr>" + FIELDS.map(f => `<th scope="col">${f}</th>`).join("") + "</tr>";
+  $("zoo").querySelector("tbody").innerHTML = ZOO.map(r =>
+    `<tr data-id="${r[0]}">` + r.map(c => `<td>${c}</td>`).join("") + "</tr>").join("");
+  $("zoo").querySelectorAll("tbody tr").forEach(tr => {
+    tr.addEventListener("click", () => toggleRow(tr));
+    tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleRow(tr); } });
+  });
+}
+
+function setPickMode(on) {
+  $("zoo").classList.toggle("pick", on);
+  $("zoo").querySelectorAll("tbody tr").forEach(tr => {
+    tr.className = "";
+    if (on) { tr.tabIndex = 0; tr.setAttribute("role", "checkbox"); tr.setAttribute("aria-checked", "false"); }
+    else { tr.removeAttribute("tabindex"); tr.removeAttribute("role"); tr.removeAttribute("aria-checked"); }
+  });
+  $("tableHint").textContent = on ? "Tap rows to select or unselect them, then press Check." : "Use this table to answer every round.";
+}
+
+function toggleRow(tr) {
+  const r = ROUNDS[i];
+  if (!r || r.type !== "rows" || locked) return;
+  const id = tr.dataset.id;
+  picked.has(id) ? picked.delete(id) : picked.add(id);
+  tr.classList.toggle("sel", picked.has(id));
+  tr.setAttribute("aria-checked", picked.has(id));
+  $("check").disabled = picked.size === 0;
+}
+
+function pips() {
+  $("pips").innerHTML = ROUNDS.map((_, k) =>
+    `<span class="pip ${k < results.length ? (results[k] ? "ok" : "no") : k === i ? "now" : ""}"></span>`).join("");
+  $("score").textContent = score;
+  $("streak").textContent = streak;
+  $("qnum").textContent = `${Math.min(i + 1, ROUNDS.length)}/${ROUNDS.length}`;
+}
+
+function render() {
+  const r = ROUNDS[i];
+  locked = false; picked = new Set(); built = [];
+  setPickMode(r.type === "rows");
+  let html = `<span class="kind">${r.kind}</span><p class="q">${r.q}</p>`;
+  if (r.sql) html += `<pre class="sql">${hiSQL(r.sql)}</pre>`;
+  if (r.type === "choice") {
+    html += `<div class="opts">` + r.opts.map((o, k) => `<button class="opt" id="opt${k}" data-v="${o}">${o}</button>`).join("") + `</div>`;
+  } else if (r.type === "build") {
+    html += `<div class="line" id="line"></div><div class="tiles" id="tiles">` +
+      shuffle(r.tiles.map((t, k) => ({ t, k }))).map(({ t, k }) =>
+        `<button class="tile ${KW.has(t) ? "kw" : ""}" id="tile${k}" data-t="${t.replace(/"/g, "&quot;")}">${t}</button>`).join("") + `</div>`;
+    html += `<div class="actions"><button class="btn" id="check" disabled>Check</button><button class="btn ghost" id="clear">Clear</button></div>`;
+  } else {
+    html += `<div class="actions"><button class="btn" id="check" disabled>Check</button></div>`;
+  }
+  html += `<div id="fb"></div>`;
+  const card = $("card");
+  card.innerHTML = html;
+  card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop");
+
+  if (r.type === "choice") card.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => answerChoice(b)));
+  if (r.type === "rows") $("check").addEventListener("click", answerRows);
+  if (r.type === "build") {
+    card.querySelectorAll(".tile").forEach(b => b.addEventListener("click", () => addTile(b)));
+    $("check").addEventListener("click", answerBuild);
+    $("clear").addEventListener("click", () => { built = []; card.querySelectorAll("#tiles .tile").forEach(t => t.disabled = false); drawLine(); });
+  }
+  pips();
+}
+
+function addTile(b) {
+  if (locked) return;
+  built.push({ t: b.dataset.t, id: b.id });
+  b.disabled = true;
+  drawLine();
+}
+function drawLine() {
+  const line = $("line");
+  line.innerHTML = built.map((x, k) => `<button class="tile ${KW.has(x.t) ? "kw" : ""}" data-k="${k}" aria-label="Remove ${x.t}">${x.t}</button>`).join("");
+  line.querySelectorAll(".tile").forEach(b => b.addEventListener("click", () => {
+    if (locked) return;
+    const x = built.splice(+b.dataset.k, 1)[0];
+    $(x.id).disabled = false; drawLine();
+  }));
+  $("check").disabled = built.length === 0;
+}
+
+function finish(ok, extra) {
+  locked = true;
+  results.push(ok);
+  if (ok) { streak++; best = Math.max(best, streak); score += 100 + (streak - 1) * 20; } else streak = 0;
+  const r = ROUNDS[i];
+  $("fb").innerHTML = `<div class="feedback ${ok ? "ok" : "no"}"><b>${ok ? "Correct!" + (streak > 1 ? ` Streak ×${streak}` : "") : "Not quite."}</b>${extra || ""}${r.why}</div>
+    <div class="actions"><button class="btn" id="next">${i + 1 < ROUNDS.length ? "Next round" : "See results"}</button></div>`;
+  $("next").addEventListener("click", () => { i++; i < ROUNDS.length ? render() : end(); });
+  $("next").focus();
+  pips();
+}
+
+function answerChoice(b) {
+  if (locked) return;
+  const r = ROUNDS[i];
+  document.querySelectorAll(".opt").forEach(o => {
+    o.disabled = true;
+    if (o.dataset.v === r.a) o.classList.add("right");
+  });
+  if (b.dataset.v !== r.a) b.classList.add("wrong");
+  finish(b.dataset.v === r.a);
+}
+
+function answerRows() {
+  const r = ROUNDS[i], want = new Set(r.a);
+  let ok = picked.size === want.size && [...picked].every(x => want.has(x));
+  $("zoo").querySelectorAll("tbody tr").forEach(tr => {
+    const id = tr.dataset.id; tr.classList.remove("sel");
+    if (picked.has(id)) tr.classList.add(want.has(id) ? "right" : "wrong");
+    else if (want.has(id)) tr.classList.add("missed");
+  });
+  $("check").disabled = true;
+  finish(ok, ok ? "" : "Green rows are correct, red rows should not be there, and a green edge marks a row you missed. ");
+}
+
+function answerBuild() {
+  const r = ROUNDS[i];
+  const mine = built.map(x => x.t);
+  const ok = r.a.some(seq => seq.length === mine.length && seq.every((t, k) => t === mine[k]));
+  document.querySelectorAll(".tile").forEach(t => t.disabled = true);
+  $("check").disabled = true; $("clear").disabled = true;
+  finish(ok, ok ? "" : `You built: <code>${mine.join(" ")};</code><br>`);
+}
+
+function end() {
+  setPickMode(false);
+  const right = results.filter(Boolean).length;
+  const rank = right >= 11 ? "SQL Master" : right >= 8 ? "Data Detective" : right >= 5 ? "Junior Analyst" : "Database Trainee";
+  const missed = ROUNDS.map((r, k) => results[k] ? null : `<li><b>${r.kind}:</b> ${r.q}${r.sql ? ` <code>${r.sql.replace(/\n/g, " ")}</code>` : ""}</li>`).filter(Boolean);
+  $("card").innerHTML = `<div class="end"><span class="kind">Results</span>
+    <p class="big">${score}</p>
+    <p class="rank">${rank}</p>
+    <p class="sub">${right} of ${ROUNDS.length} correct · best streak ${best}</p>
+    ${missed.length ? `<p class="hint">Rounds to review:</p><ol class="review">${missed.join("")}</ol>` : `<p class="hint">A perfect run. Try writing your own query for a classmate.</p>`}
+    <div class="actions"><button class="btn" id="again">Play again</button></div></div>`;
+  $("again").addEventListener("click", () => { i = 0; score = 0; streak = 0; best = 0; results = []; render(); });
+  pips();
+  $("qnum").textContent = "Done";
+}
+
+function shuffle(a) { for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; }
+
+drawTable();
+render();
+</script>
+
+</body></html>
